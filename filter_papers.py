@@ -232,7 +232,7 @@ def filter_by_gpt(
                     }
                     sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
                   
-                if jdict["ARXIVID"] in all_papers:
+                if "ARXIVID" in jdict and jdict["ARXIVID"] in all_papers:
                   scored_in_batch.append(
                       {
                           **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
