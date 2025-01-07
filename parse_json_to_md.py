@@ -31,6 +31,10 @@ def render_paper(paper_entry: dict, idx: int) -> str:
         novelty = paper_entry["NOVELTY"]
         paper_string += f"**Relevance:** {relevance}\n"
         paper_string += f"**Novelty:** {novelty}\n"
+    
+    # whether export to obsidian notes, default to 0
+    paper_string += f"**ExportToObsidian:** 0\n"
+
     return paper_string + "\n---\n"
 
 

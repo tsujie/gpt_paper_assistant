@@ -99,7 +99,7 @@ def get_papers_from_arxiv_rss(area: str, config: Optional[dict]) -> List[Paper]:
         # extract area
         paper_area = paper.tags[0]["term"]
         # ignore papers not in primary area
-        if (area != paper_area) and (config["FILTERING"].getboolean("force_primary")):
+        if (area not in paper_area) and (config["FILTERING"].getboolean("force_primary")):
             print(f"ignoring {paper.title}")
             continue
         # otherwise make a new paper, for the author field make sure to strip the HTML tags

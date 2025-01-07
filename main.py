@@ -5,7 +5,7 @@ import time
 
 from openai import OpenAI
 from requests import Session
-from typing import TypeVar, Generator
+from typing import TypeVar, Generator, Literal
 import io
 
 from retry import retry
@@ -16,6 +16,24 @@ from filter_papers import filter_by_author, filter_by_gpt
 from parse_json_to_md import render_md_string
 from push_to_slack import push_to_slack
 from arxiv_scraper import EnhancedJSONEncoder
+
+try:
+    from engine.utils.code_llama_client import setup_llama
+except:
+    print("Unable to import Llama modules. Are you running on cluster?")
+    
+try:
+    from engine.utils.code_ollama_client import setup_ollama
+except:
+    print("Unable to import OLlama modules. Are you running on cluster?")
+    
+from engine.constants import (
+    LLM_PROVIDER,
+    TEMPERATURE,
+    NUM_COMPLETIONS,
+    MAX_TOKENS,
+    DRY_RUN,
+)
 
 T = TypeVar("T")
 
@@ -186,12 +204,25 @@ if __name__ == "__main__":
     config.read("configs/config.ini")
 
     S2_API_KEY = os.environ.get("S2_KEY")
-    OAI_KEY = os.environ.get("OAI_KEY")
-    if OAI_KEY is None:
-        raise ValueError(
-            "OpenAI key is not set - please set OAI_KEY to your OpenAI key"
-        )
-    openai_client = OpenAI(api_key=OAI_KEY)
+    
+    # OAI_KEY = os.environ.get("OAI_KEY")
+    # if OAI_KEY is None:
+    #     raise ValueError(
+    #         "OpenAI key is not set - please set OAI_KEY to your OpenAI key"
+    #     )
+    # openai_client = OpenAI(api_key=OAI_KEY)
+    model = None
+    if LLM_PROVIDER == "gpt":
+        model = setup_gpt()
+    elif LLM_PROVIDER == "claude":
+        model = setup_claude()
+    elif LLM_PROVIDER == "llama":
+        model = setup_llama()
+    elif LLM_PROVIDER == "ollama":
+        model = setup_ollama()
+    else:
+        raise NotImplementedError(f"{LLM_PROVIDER=}")
+          
     # load the author list
     with io.open("configs/authors.txt", "r") as fopen:
         author_names, author_ids = parse_authors(fopen.readlines())
@@ -221,6 +252,7 @@ if __name__ == "__main__":
         ) as outfile:
             json.dump(list(author_id_set), outfile, cls=EnhancedJSONEncoder, indent=4)
 
+    print("Fiter by author")
     selected_papers, all_papers, sort_dict = filter_by_author(
         all_authors, papers, author_id_set, config
     )
@@ -228,7 +260,7 @@ if __name__ == "__main__":
         all_authors,
         papers,
         config,
-        openai_client,
+        model,
         all_papers,
         selected_papers,
         sort_dict,

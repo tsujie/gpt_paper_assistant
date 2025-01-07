@@ -58,22 +58,30 @@ def calc_price(model, usage):
         return (0.03 * usage.prompt_tokens + 0.06 * usage.completion_tokens) / 1000.0
     if (model == "gpt-3.5-turbo") or (model == "gpt-3.5-turbo-1106"):
         return (0.0015 * usage.prompt_tokens + 0.002 * usage.completion_tokens) / 1000.0
+    else:
+        return 0.0
 
 
 @retry.retry(tries=3, delay=2)
 def call_chatgpt(full_prompt, openai_client, model):
-    return openai_client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": full_prompt}],
-        temperature=0.0,
-        seed=0,
-    )
+    # return openai_client.chat.completions.create(
+    #     model=model,
+    #     messages=[{"role": "user", "content": full_prompt}],
+    #     temperature=0.0,
+    #     seed=0,
+    # )
+    _, results = openai_client.generate(
+            user_prompt=full_prompt,
+            system_prompt=None
+        )
+    return results
 
 
 def run_and_parse_chatgpt(full_prompt, openai_client, config):
     # just runs the chatgpt prompt, tries to parse the resulting JSON
     completion = call_chatgpt(full_prompt, openai_client, config["SELECTION"]["model"])
-    out_text = completion.choices[0].message.content
+    #out_text = completion.choices[0].message.content
+    out_text = completion[0]
     out_text = re.sub("```jsonl\n", "", out_text)
     out_text = re.sub("```", "", out_text)
     out_text = re.sub(r"\n+", "\n", out_text)
@@ -90,9 +98,10 @@ def run_and_parse_chatgpt(full_prompt, openai_client, config):
                 print("Failed to parse LM output as json")
                 print(out_text)
                 print("RAW output")
-                print(completion.choices[0].message.content)
+                #print(completion.choices[0].message.content)
+                print(completion[0])
             continue
-    return json_dicts, calc_price(config["SELECTION"]["model"], completion.usage)
+    return json_dicts, 0.0 #calc_price(config["SELECTION"]["model"], completion.usage)
 
 
 def paper_to_string(paper_entry: Paper) -> str:
@@ -131,9 +140,12 @@ def filter_papers_by_title(
             base_prompt + "\n " + criterion + "\n" + papers_string + filter_postfix
         )
         model = config["SELECTION"]["model"]
+        print(f'model={model}, full_prompt={full_prompt}')
         completion = call_chatgpt(full_prompt, openai_client, model)
-        cost += calc_price(model, completion.usage)
-        out_text = completion.choices[0].message.content
+        #cost += calc_price(model, completion.usage)
+        #out_text = completion.choices[0].message.content
+        out_text = completion[0]
+        print(out_text)
         try:
             filtered_set = set(json.loads(out_text))
             for paper in batch:
@@ -208,7 +220,8 @@ def filter_by_gpt(
             all_cost += cost
             for jdict in json_dicts:
                 if (
-                    int(jdict["RELEVANCE"])
+                    "RELEVANCE" in jdict 
+                    and int(jdict["RELEVANCE"])
                     >= int(config["FILTERING"]["relevance_cutoff"])
                     and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"])
                     and jdict["ARXIVID"] in all_papers
@@ -218,12 +231,14 @@ def filter_by_gpt(
                         **jdict,
                     }
                     sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
-                scored_in_batch.append(
-                    {
-                        **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
-                        **jdict,
-                    }
-                )
+                  
+                if jdict["ARXIVID"] in all_papers:
+                  scored_in_batch.append(
+                      {
+                          **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
+                          **jdict,
+                      }
+                  )
             scored_batches.append(scored_in_batch)
         if config["OUTPUT"].getboolean("dump_debug_file"):
             with open(
