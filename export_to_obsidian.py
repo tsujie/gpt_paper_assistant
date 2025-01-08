@@ -62,9 +62,9 @@ if __name__ == "__main__":
         paper_string += '### Links\n\n'
         paper_string += f"### [{file_name}]()\n\n"
         paper_string += f"### Date Added: {data_str}\n\n"
-        paper_string += f"### Paper link: \n[{file_name}](https://arxiv.org/abs/{paper['arxiv_id']})\n\n"        
+        paper_string += f"### Paper link \n[{file_name}](https://arxiv.org/abs/{paper['arxiv_id']})\n\n"        
         if len(urls) > 0 and 'github' in urls[0]:
-          paper_string += f"### Github repo: \n[{file_name}]({urls[0].rstrip('.,')})\n\n"        
+          paper_string += f"### Github repo \n[{file_name}]({urls[0].rstrip('.,')})\n\n"        
 
         paper_string += '### Abstract\n'
         paper_string += f"{abstract_str}"

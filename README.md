@@ -44,6 +44,9 @@ Instead of passing credentials via github secrets, you have to set environment v
 
 To run everything, just call `main.py`
 
+If you want to export some papers to Obsidian notes as md files, you can modify the `output/output.json` file. Set the `ExportToObsidian` field of desired paper to 1, then run
+`python export_to_obsidian.py`
+
 **Other notes:**
 You may also want to not push to slack, in which case set your desired output endpoint (json, markdown, slack) in the `dump_json`, `dump_md`, and `push_to_slack` fields of `config/config.ini`.
 
