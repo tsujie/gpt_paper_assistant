@@ -49,9 +49,9 @@ if __name__ == "__main__":
         paper_string = '---\n'
         paper_string += f"uid: {uid}\n"
         paper_string += 'timesViewed: 1\n'
-        paper_string += r'date created: <%+ tp.file.creation_date() %>'
+        paper_string += r'date created: <% tp.file.creation_date("YYYY-MM-DD\THH:mm:ss") %>'
         paper_string += '\n'
-        paper_string += r'date modified: <%+ tp.file.last_modified_date() %>'
+        paper_string += r'date modified: <% tp.file.last_modified_date() %>'
         paper_string += '\n'
         paper_string += f"title: {file_name}\n"
         paper_string += 'dg-publish: false\n'
