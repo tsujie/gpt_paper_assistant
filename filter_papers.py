@@ -219,19 +219,23 @@ def filter_by_gpt(
             )
             all_cost += cost
             for jdict in json_dicts:
-                if (
-                    "RELEVANCE" in jdict 
-                    and int(jdict["RELEVANCE"])
-                    >= int(config["FILTERING"]["relevance_cutoff"])
-                    and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"])
-                    and jdict["ARXIVID"] in all_papers
-                ):
-                    selected_papers[jdict["ARXIVID"]] = {
-                        **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
-                        **jdict,
-                    }
-                    sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
-                  
+                try:
+                  if (
+                      "RELEVANCE" in jdict 
+                      and int(jdict["RELEVANCE"])
+                      >= int(config["FILTERING"]["relevance_cutoff"])
+                      and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"])
+                      and jdict["ARXIVID"] in all_papers
+                  ):
+                      selected_papers[jdict["ARXIVID"]] = {
+                          **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
+                          **jdict,
+                      }
+                      sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
+                except Exception as ex:
+                  print("exception happened" + str(ex))
+                  pass
+                
                 if "ARXIVID" in jdict and jdict["ARXIVID"] in all_papers:
                   scored_in_batch.append(
                       {
