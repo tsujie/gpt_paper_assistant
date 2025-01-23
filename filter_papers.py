@@ -232,17 +232,18 @@ def filter_by_gpt(
                           **jdict,
                       }
                       sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
+                      
+                  if "ARXIVID" in jdict and jdict["ARXIVID"] in all_papers:
+                    scored_in_batch.append(
+                        {
+                            **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
+                            **jdict,
+                        }
+                    )
                 except Exception as ex:
                   print("exception happened" + str(ex))
                   pass
                 
-                if "ARXIVID" in jdict and jdict["ARXIVID"] in all_papers:
-                  scored_in_batch.append(
-                      {
-                          **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
-                          **jdict,
-                      }
-                  )
             scored_batches.append(scored_in_batch)
         if config["OUTPUT"].getboolean("dump_debug_file"):
             with open(
