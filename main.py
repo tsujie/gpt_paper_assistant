@@ -229,6 +229,8 @@ if __name__ == "__main__":
     author_id_set = set(author_ids)
 
     papers = list(get_papers_from_arxiv(config))
+    # Test only use the first 100 papers
+    #papers = papers[:100]
     # dump all papers for debugging
 
     all_authors = set()

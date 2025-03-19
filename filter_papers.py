@@ -181,6 +181,18 @@ def run_on_batch(
     return json_dicts, cost
 
 
+def has_github_link(abstract_str):
+    # Regex pattern to find URLs
+    url_pattern = r'https?://[^\s]+'
+    # Extracting the URL
+    urls = re.findall(url_pattern, abstract_str)
+       
+    if len(urls) > 0 and 'github' in urls[0]:
+        return True
+    else:
+        return False
+            
+          
 def filter_by_gpt(
     all_authors, papers, config, openai_client, all_papers, selected_papers, sort_dict
 ):
@@ -220,18 +232,31 @@ def filter_by_gpt(
             all_cost += cost
             for jdict in json_dicts:
                 try:
+                  # Check if this paper includes github link in abstract
+                  if jdict["ARXIVID"] in all_papers:
+                      data = dataclasses.asdict(all_papers[jdict["ARXIVID"]])
+                      if "abstract" in data:
+                          github_link = has_github_link(data["abstract"])
+                      else:
+                          github_link = False
+                  else:
+                      github_link = False
+                  
+                  jdict["HasGithubRepo"] = github_link
+                    
                   if (
-                      "RELEVANCE" in jdict 
+                      (("RELEVANCE" in jdict 
                       and int(jdict["RELEVANCE"])
                       >= int(config["FILTERING"]["relevance_cutoff"])
-                      and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"])
+                      and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"]))
+                      or (github_link))
                       and jdict["ARXIVID"] in all_papers
                   ):
                       selected_papers[jdict["ARXIVID"]] = {
                           **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
                           **jdict,
                       }
-                      sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
+                      sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"] + (20 if github_link else 0)
                       
                   if "ARXIVID" in jdict and jdict["ARXIVID"] in all_papers:
                     scored_in_batch.append(
