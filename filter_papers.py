@@ -221,6 +221,22 @@ def filter_by_gpt(
             )
         all_cost += cost
 
+        # Keep all papers have github repo
+        for one_paper_id in all_papers:
+            data = dataclasses.asdict(all_papers[one_paper_id])
+            if "abstract" in data:
+                github_link = has_github_link(data["abstract"])
+                if github_link:
+                    jdict = {'ARXIVID': one_paper_id, 'COMMENT': '0', 'RELEVANCE': 0, 'NOVELTY': 0, 'HasGithubRepo': True, 'ExportToObsidian': 0} 
+                    selected_papers[one_paper_id] = {
+                        **dataclasses.asdict(all_papers[one_paper_id]),
+                        **jdict,
+                    }
+                    sort_dict[one_paper_id] = jdict["RELEVANCE"] + jdict["NOVELTY"] + (20 if github_link else 0)
+                    for one_candidate_paper in paper_list[:] : # Iterate over a copy of the list
+                        if one_candidate_paper.arxiv_id == one_paper_id:
+                            paper_list.remove(one_candidate_paper)
+                    
         # batch the remaining papers and invoke GPT
         batch_of_papers = batched(paper_list, int(config["SELECTION"]["batch_size"]))
         scored_batches = []
@@ -231,32 +247,19 @@ def filter_by_gpt(
             )
             all_cost += cost
             for jdict in json_dicts:
-                try:
-                  # Check if this paper includes github link in abstract
-                  if jdict["ARXIVID"] in all_papers:
-                      data = dataclasses.asdict(all_papers[jdict["ARXIVID"]])
-                      if "abstract" in data:
-                          github_link = has_github_link(data["abstract"])
-                      else:
-                          github_link = False
-                  else:
-                      github_link = False
-                  
-                  jdict["HasGithubRepo"] = github_link
-                    
+                try:                    
                   if (
-                      (("RELEVANCE" in jdict 
+                      ("RELEVANCE" in jdict 
                       and int(jdict["RELEVANCE"])
                       >= int(config["FILTERING"]["relevance_cutoff"])
                       and jdict["NOVELTY"] >= int(config["FILTERING"]["novelty_cutoff"]))
-                      or (github_link))
                       and jdict["ARXIVID"] in all_papers
                   ):
                       selected_papers[jdict["ARXIVID"]] = {
                           **dataclasses.asdict(all_papers[jdict["ARXIVID"]]),
                           **jdict,
                       }
-                      sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"] + (20 if github_link else 0)
+                      sort_dict[jdict["ARXIVID"]] = jdict["RELEVANCE"] + jdict["NOVELTY"]
                       
                   if "ARXIVID" in jdict and jdict["ARXIVID"] in all_papers:
                     scored_in_batch.append(
