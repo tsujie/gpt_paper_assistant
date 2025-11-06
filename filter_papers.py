@@ -21,18 +21,18 @@ def filter_by_author(all_authors, papers, author_targets, config):
     # author based selection
     for paper in papers:
         all_papers[paper.arxiv_id] = paper
-        for author in paper.authors:
-            if author in all_authors:
-                for alias in all_authors[author]:
-                    if alias["authorId"] in author_targets:
-                        selected_papers[paper.arxiv_id] = {
-                            **dataclasses.asdict(paper),
-                            **{"COMMENT": "Author match"},
-                        }
-                        sort_dict[paper.arxiv_id] = float(
-                            config["SELECTION"]["author_match_score"]
-                        )
-                        break
+        # for author in paper.authors:
+        #     if author in all_authors:
+        #         for alias in all_authors[author]:
+        #             if alias["authorId"] in author_targets:
+        #                 selected_papers[paper.arxiv_id] = {
+        #                     **dataclasses.asdict(paper),
+        #                     **{"COMMENT": "Author match"},
+        #                 }
+        #                 sort_dict[paper.arxiv_id] = float(
+        #                     config["SELECTION"]["author_match_score"]
+        #                 )
+        #                 break
     return selected_papers, all_papers, sort_dict
 
 
@@ -206,7 +206,7 @@ def filter_by_gpt(
     all_cost = 0
     if config["SELECTION"].getboolean("run_openai"):
         # filter first by hindex of authors to reduce costs.
-        paper_list = filter_papers_by_hindex(all_authors, papers, config)
+        paper_list = papers #filter_papers_by_hindex(all_authors, papers, config)
         if config["OUTPUT"].getboolean("debug_messages"):
             print(str(len(paper_list)) + " papers after hindex filtering")
         cost = 0
